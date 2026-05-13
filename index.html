@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <title>保存できる版 野菜・食材メモ</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    :root {
+      --bg: #f6f3ee;
+      --surface: #fffdf9;
+      --surface-2: #f2eee7;
+      --border: #ddd4c8;
+      --text: #2b261f;
+      --muted: #756e66;
+      --accent: #0f766e;
+      --accent-soft: #d7efe9;
+      --accent-2: #a75b2a;
+      --warning-soft: #f6e4d6;
+      --chip: #f0ede7;
+      --radius: 14px;
+      --shadow: 0 8px 24px rgba(52, 41, 29, 0.08);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Hiragino Sans", "Noto Sans JP", sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at top right, rgba(15,118,110,0.08), transparent 28%),
+        radial-gradient(circle at bottom left, rgba(167,91,42,0.08), transparent 22%),
+        var(--bg);
+      line-height: 1.6;
+    }
+    .wrap { max-width: 1380px; margin: 0 auto; padding: 20px; }
+    .hero {
+      background: linear-gradient(135deg, rgba(255,253,249,0.96), rgba(245,240,232,0.94));
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      box-shadow: var(--shadow);
+      padding: 22px;
+      margin-bottom: 14px;
+    }
+    .brand { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+    .brand-mark {
+      width: 52px; height: 52px; border-radius: 16px;
+      background: linear-gradient(135deg, var(--accent), #2f8d83);
+      color: white; display: grid; place-items: center; font-size: 24px;
+      box-shadow: 0 10px 20px rgba(15,118,110,0.22);
+    }
+    h1 { margin: 0; font-size: clamp(1.4rem, 2vw, 2rem); line-height: 1.2; }
+    .hero p { margin: 6px 0 0; color: var(--muted); max-width: 76ch; }
+    .badge {
+      display: inline-flex; align-items: center; gap: 6px; padding: 6px 10px;
+      border-radius: 999px; background: var(--accent-soft); color: var(--accent);
+      font-size: 0.78rem; font-weight: 700;
+    }
+    .stats { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 16px; }
+    .stat { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 10px 14px; min-width: 120px; }
+    .stat strong { display: block; font-size: 1.05rem; margin-bottom: 2px; }
+    .stat span { font-size: 0.78rem; color: var(--muted); }
+    .layout { display: grid; grid-template-columns: minmax(0, 360px) minmax(0, 1fr); gap: 14px; align-items: start; }
+    @media (max-width: 980px) { .layout { grid-template-columns: 1fr; } }
+    .panel {
+      background: rgba(255,253,249,0.94); border: 1px solid var(--border); border-radius: 18px;
+      box-shadow: var(--shadow); padding: 16px; backdrop-filter: blur(10px);
+    }
+    .panel h2 { margin: 0 0 12px; font-size: 1rem; }
+    .controls { display: grid; gap: 10px; margin-bottom: 12px; }
+    label { display: block; font-size: 0.8rem; color: var(--muted); margin-bottom: 4px; }
+    input[type="text"], textarea {
+      width: 100%; border: 1px solid var(--border); border-radius: 12px; padding: 10px 12px;
+      background: white; color: var(--text); font: inherit;
+    }
+    textarea { min-height: 92px; resize: vertical; }
+    .chip-row, .toolbar { display: flex; flex-wrap: wrap; gap: 8px; }
+    .chip-button, .tag {
+      display: inline-flex; align-items: center; gap: 6px; border-radius: 999px;
+      border: 1px solid var(--border); background: var(--chip); color: var(--muted);
+      padding: 6px 10px; font-size: 0.78rem;
+    }
+    .chip-button { cursor: pointer; }
+    .chip-button.active { background: var(--accent-soft); color: var(--accent); border-color: var(--accent); font-weight: 700; }
+    .subtle, .footer-note, .hint { color: var(--muted); font-size: 0.8rem; }
+    .list { display: grid; gap: 10px; max-height: 72vh; overflow: auto; padding-right: 2px; }
+    .card {
+      border: 1px solid var(--border); border-radius: 16px; padding: 12px;
+      background: linear-gradient(180deg, rgba(255,255,255,0.96), rgba(247,243,236,0.9));
+      cursor: pointer; transition: transform 0.16s ease, box-shadow 0.16s ease, border-color 0.16s ease;
+    }
+    .card:hover { transform: translateY(-2px); box-shadow: 0 10px 18px rgba(52,41,29,0.08); }
+    .card.selected { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(15,118,110,0.12); background: linear-gradient(180deg, #ffffff, #eef8f5); }
+    .card-title { display: flex; justify-content: space-between; gap: 10px; align-items: start; margin-bottom: 6px; }
+    .card-title strong { font-size: 1rem; }
+    .mini { font-size: 0.74rem; color: var(--muted); }
+    .notice {
+      border-radius: 14px; padding: 10px 12px; background: var(--warning-soft); color: #8b4b23;
+      font-size: 0.82rem; border: 1px solid #ebcdb3; margin-bottom: 12px;
+    }
+    .detail-header { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 10px; align-items: start; margin-bottom: 10px; }
+    .detail-header h2 { font-size: 1.25rem; margin: 0 0 6px; }
+    button {
+      border: 1px solid var(--border); background: white; color: var(--text); font: inherit;
+      border-radius: 12px; padding: 9px 12px; cursor: pointer;
+    }
+    button.primary { background: var(--accent); color: white; border-color: var(--accent); }
+    button.secondary { background: var(--warning-soft); color: var(--accent-2); border-color: #e7c8ad; }
+    button.ghost { background: var(--surface-2); }
+    .section-grid { display: grid; gap: 12px; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    @media (max-width: 900px) { .section-grid { grid-template-columns: 1fr; } }
+    .section { border: 1px solid var(--border); border-radius: 16px; background: linear-gradient(180deg, rgba(255,255,255,0.98), rgba(248,244,238,0.92)); padding: 14px; }
+    .section h3 { margin: 0 0 8px; font-size: 0.95rem; }
+    .section p, .section ul { margin: 0; font-size: 0.88rem; }
+    .section ul { padding-left: 1.15rem; }
+    .section li + li { margin-top: 5px; }
+    .full { grid-column: 1 / -1; }
+    .empty { color: var(--muted); font-size: 0.88rem; padding: 18px; border: 1px dashed var(--border); border-radius: 16px; background: rgba(255,255,255,0.6); }
+    .editor { margin-top: 14px; border-top: 1px dashed var(--border); padding-top: 14px; }
+    .editor-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+    .editor-grid .full { grid-column: 1 / -1; }
+    @media (max-width: 900px) { .editor-grid { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <section class="hero">
+      <div class="brand">
+        <div class="brand-mark">📦</div>
+        <div>
+          <div class="badge">保存できる版</div>
+          <h1>野菜・食材の保存と復活メモ</h1>
+          <p>ブラウザ内保存に加えて、JSONとして書き出し・読み込みができる版。つまり、追加したデータをファイルとしてバックアップできます。</p>
+        </div>
+      </div>
+      <div class="stats">
+        <div class="stat"><strong id="statCount">0</strong><span>登録食材数</span></div>
+        <div class="stat"><strong id="statCold">0</strong><span>冷蔵タグ件数</span></div>
+        <div class="stat"><strong id="statFrozen">0</strong><span>冷凍タグ件数</span></div>
+        <div class="stat"><strong id="statRoom">0</strong><span>常温タグ件数</span></div>
+      </div>
+    </section>
+
+    <div class="layout">
+      <aside class="panel">
+        <h2>食材リスト</h2>
+        <div class="controls">
+          <div>
+            <label for="search">検索</label>
+            <input id="search" type="text" placeholder="大根、白菜、スープ など" />
+          </div>
+          <div>
+            <label>保存タグ</label>
+            <div class="chip-row" id="filterChips"></div>
+          </div>
+          <div>
+            <label>データの保存と読み込み</label>
+            <div class="toolbar">
+              <button class="primary" id="exportBtn">追加データをJSON保存</button>
+              <button class="ghost" id="importBtn">JSONを読み込む</button>
+              <input id="importFile" type="file" accept="application/json,.json" style="display:none" />
+            </div>
+            <p class="hint">追加した食材だけを書き出します。初期データは含みません。</p>
+          </div>
+        </div>
+        <div class="list" id="list"></div>
+        <p class="footer-note">※ 同じブラウザ内では localStorage にも残ります。JSON保存すると、別PC・別ブラウザでも持ち運べます。</p>
+      </aside>
+
+      <main class="panel">
+        <div class="notice">今回は「ブラウザ内保存 + JSONファイル保存」の二段構えです。消えるのが不安なら、定期的にJSONを書き出しておくのがおすすめ。</div>
+        <section id="detailView">
+          <div class="empty">左の食材を選ぶと詳細が見られます。</div>
+        </section>
+
+        <section class="editor" id="editorTop">
+          <h2>食材を追加する</h2>
+          <div class="editor-grid">
+            <div>
+              <label for="f-name">食材名</label>
+              <input id="f-name" type="text" placeholder="例：玉ねぎ" />
+            </div>
+            <div>
+              <label for="f-kana">かな</label>
+              <input id="f-kana" type="text" placeholder="例：たまねぎ" />
+            </div>
+            <div class="full">
+              <label>保存タグ</label>
+              <div class="chip-row">
+                <button type="button" class="chip-button form-tag" data-tag="常温">常温</button>
+                <button type="button" class="chip-button form-tag" data-tag="冷蔵">冷蔵</button>
+                <button type="button" class="chip-button form-tag" data-tag="冷凍">冷凍</button>
+              </div>
+              <div class="hint">複数選択OK。</div>
+            </div>
+            <div class="full">
+              <label for="f-feature">特徴</label>
+              <textarea id="f-feature" placeholder="どんな食材か、ざっくり1〜2文"></textarea>
+            </div>
+            <div class="full">
+              <label for="f-period">保存期間の目安</label>
+              <input id="f-period" type="text" placeholder="例：冷蔵1週間、冷凍1か月" />
+            </div>
+            <div class="full">
+              <label for="f-storage">保存方法（1行1項目）</label>
+              <textarea id="f-storage" placeholder="新聞紙で包む\nポリ袋に入れて野菜室へ"></textarea>
+            </div>
+            <div class="full">
+              <label for="f-revive">しなびた時の復活方法（1行1項目）</label>
+              <textarea id="f-revive" placeholder="冷水に浸ける\n加熱料理に回す"></textarea>
+            </div>
+            <div class="full">
+              <label for="f-dry">乾燥しすぎた時の使い方（1行1項目）</label>
+              <textarea id="f-dry" placeholder="スープに入れる\n炒め物に回す"></textarea>
+            </div>
+            <div class="full">
+              <label for="f-bulk">大量消費レシピ例（1行1項目）</label>
+              <textarea id="f-bulk" placeholder="ポタージュ\n漬物\n炒め物"></textarea>
+            </div>
+            <div class="full">
+              <label for="f-note">メモ</label>
+              <textarea id="f-note" placeholder="使い分け、気づき、自分用メモなど"></textarea>
+            </div>
+          </div>
+          <div class="toolbar">
+            <button class="primary" id="addBtn">この食材を追加</button>
+            <button class="secondary" id="resetBtn">追加データを初期化</button>
+          </div>
+        </section>
+      </main>
+    </div>
+  </div>
+
+  <script>
+    const BASE_DATA = [
+      { id:'daikon', name:'大根', kana:'だいこん', storageTags:['冷蔵','冷凍'], feature:'辛味と甘味のバランスがよく、生・煮物・炒め物・漬物など幅広く使える根菜。', period:'冷蔵：2〜3週間／冷凍：1か月程度。', storage:['葉付きなら葉を切り落とし、包んで立てて野菜室へ。','使いかけは切り口をラップで覆う。','用途別にカットして冷凍保存。'], revive:['少ししなびた程度なら冷水に20〜30分ほど浸ける。','塩を軽くふって置くと食感が少し改善することがある。'], dryUse:['厚めに皮をむいてきんぴらへ。','スカスカなら味の濃い煮物やスープへ。'], bulk:['大根ステーキ','大根と鶏肉の煮物','切り干し大根風'], note:'先端は辛味が強め、上部は甘め。料理で使い分けしやすい。' },
+      { id:'ninjin', name:'にんじん', kana:'にんじん', storageTags:['冷蔵','冷凍'], feature:'甘みと色味が特徴で、煮物・炒め物・サラダなど万能に使える。', period:'冷蔵：2〜3週間／冷凍：1か月程度。', storage:['包んでポリ袋に入れ、野菜室で立てて保存。','カット後はラップや密閉容器で乾燥防止。','細切りなどにして小分け冷凍。'], revive:['丸ごと水に浸けてハリを戻す。','スティック状にして氷水に浸ける。'], dryUse:['刻んで煮込み料理に。','すりおろしてつくねやハンバーグへ。'], bulk:['キャロットラペ','にんじんポタージュ','にんじんしりしり'], note:'スカスカなら生食より加熱向き。' },
+      { id:'kyabetsu', name:'キャベツ', kana:'きゃべつ', storageTags:['冷蔵'], feature:'生でも加熱でも使える万能葉物。', period:'冷蔵：1〜2週間（丸ごと）／カット後は3〜4日程度。', storage:['丸ごとは芯を下にしてポリ袋へ。','カット後は切り口を保護して冷蔵。','千切りは早めに使い切る。'], revive:['しなびた外葉は冷水に浸ける。','芯の断面を水に当てると多少戻ることがある。'], dryUse:['固くなった外葉は炒め物へ。','スープに入れると気になりにくい。'], bulk:['ロールキャベツ','ミネストローネ','お好み焼き'], note:'外葉と中心で向く料理が違う。' },
+      { id:'hourensou', name:'ほうれん草', kana:'ほうれんそう', storageTags:['冷蔵','冷凍'], feature:'葉物の定番。下茹で冷凍で使い回ししやすい。', period:'冷蔵：2〜3日／冷凍：2〜3週間程度。', storage:['洗わず包んで立てて保存。','下茹でして絞って小分け冷凍。'], revive:['少ししなびたら冷水に浸ける。','完全にぐったりなら加熱料理へ。'], dryUse:['傷んだ部分を除いて卵焼きやスープへ。','カレーやシチューに混ぜる。'], bulk:['ベーコンソテー','ほうれん草カレー','キッシュ'], note:'根元もよく洗えば食べられる。' },
+      { id:'hakusai', name:'白菜', kana:'はくさい', storageTags:['冷蔵'], feature:'鍋、煮物、浅漬けに使いやすい葉物。', period:'冷蔵：1〜2週間／カット後は3〜4日程度。', storage:['丸ごとは包んで立てて保存。','カット後は切り口をラップで保護。'], revive:['しんなりした葉は冷水に。','鍋やスープに回すと気になりにくい。'], dryUse:['乾いた部分を除き、内側を炒め物やスープへ。','少し酸味が出たら酸味系の加熱料理に。'], bulk:['白菜たっぷり鍋','白菜とツナの煮びたし','白菜の浅漬け'], note:'白菜系の菜っ葉も近い感覚で管理しやすい。' }
+    ];
+
+    const STORAGE_OPTIONS = ['常温','冷蔵','冷凍'];
+    const STORAGE_KEY = 'vegetable-memo-app-custom-data-v3';
+
+    const listEl = document.getElementById('list');
+    const detailView = document.getElementById('detailView');
+    const searchEl = document.getElementById('search');
+    const filterChipsEl = document.getElementById('filterChips');
+    const importFileEl = document.getElementById('importFile');
+
+    let activeFilter = null;
+    let selectedId = null;
+    let formTags = [];
+
+    function readCustomData() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        return raw ? JSON.parse(raw) : [];
+      } catch (e) {
+        return [];
+      }
+    }
+
+    function writeCustomData(data) {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+      } catch (e) {
+        alert('このブラウザでは localStorage 保存が制限されているかもしれません。');
+      }
+    }
+
+    function getAllData() {
+      return [...BASE_DATA, ...readCustomData()];
+    }
+
+    function normalizeLines(text) {
+      return text.split(/\n+/).map(v => v.trim()).filter(Boolean);
+    }
+
+    function escapeHtml(value) {
+      return String(value ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
+    function listHtml(arr) {
+      if (!arr || !arr.length) return '<div class="subtle">未入力</div>';
+      return `<ul>${arr.map(v => `<li>${escapeHtml(v)}</li>`).join('')}</ul>`;
+    }
+
+    function renderFilterChips() {
+      filterChipsEl.innerHTML = '';
+      STORAGE_OPTIONS.forEach(tag => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'chip-button' + (activeFilter === tag ? ' active' : '');
+        btn.textContent = tag;
+        btn.addEventListener('click', () => {
+          activeFilter = activeFilter === tag ? null : tag;
+          renderFilterChips();
+          renderList();
+        });
+        filterChipsEl.appendChild(btn);
+      });
+    }
+
+    function renderStats() {
+      const data = getAllData();
+      document.getElementById('statCount').textContent = data.length;
+      document.getElementById('statCold').textContent = data.filter(d => d.storageTags.includes('冷蔵')).length;
+      document.getElementById('statFrozen').textContent = data.filter(d => d.storageTags.includes('冷凍')).length;
+      document.getElementById('statRoom').textContent = data.filter(d => d.storageTags.includes('常温')).length;
+    }
+
+    function matches(item, query) {
+      const q = query.trim().toLowerCase();
+      if (!q) return true;
+      return [item.name, item.kana, item.feature, item.note, ...(item.bulk || [])].join(' ').toLowerCase().includes(q);
+    }
+
+    function renderList() {
+      const data = getAllData();
+      const q = searchEl.value || '';
+      const filtered = data.filter(item => matches(item, q) && (!activeFilter || item.storageTags.includes(activeFilter)));
+      listEl.innerHTML = '';
+      if (!filtered.length) {
+        listEl.innerHTML = '<div class="empty">該当する食材がありません。検索語かタグを変えてみてください。</div>';
+        return;
+      }
+      filtered.forEach(item => {
+        const card = document.createElement('article');
+        card.className = 'card' + (item.id === selectedId ? ' selected' : '');
+        card.innerHTML = `
+          <div class="card-title">
+            <div>
+              <strong>${escapeHtml(item.name)}</strong>
+              <div class="mini">${escapeHtml(item.kana || '')}</div>
+            </div>
+            <div class="mini">${item.storageTags.join(' / ')}</div>
+          </div>
+          <div class="chip-row" style="margin-bottom:8px;">${item.storageTags.map(tag => `<span class="tag">${escapeHtml(tag)}</span>`).join('')}</div>
+          <div class="mini">${escapeHtml(item.feature)}</div>
+        `;
+        card.addEventListener('click', () => {
+          selectedId = item.id;
+          renderList();
+          renderDetail(item);
+        });
+        listEl.appendChild(card);
+      });
+    }
+
+    function renderDetail(item) {
+      if (!item) {
+        detailView.innerHTML = '<div class="empty">左の食材を選ぶと詳細が見られます。</div>';
+        return;
+      }
+      detailView.innerHTML = `
+        <div class="detail-header">
+          <div>
+            <h2>${escapeHtml(item.name)}</h2>
+            <div class="chip-row">${item.storageTags.map(tag => `<span class="tag">${escapeHtml(tag)}</span>`).join('')}</div>
+          </div>
+          <div class="mini">保存期間の目安：${escapeHtml(item.period || '未入力')}</div>
+        </div>
+        <div class="toolbar">
+          <button type="button" onclick="document.getElementById('editorTop').scrollIntoView({behavior:'smooth'})">下の追加フォームへ</button>
+        </div>
+        <div class="section-grid">
+          <section class="section"><h3>特徴</h3><p>${escapeHtml(item.feature || '未入力')}</p></section>
+          <section class="section"><h3>保存期間</h3><p>${escapeHtml(item.period || '未入力')}</p></section>
+          <section class="section"><h3>保存方法</h3>${listHtml(item.storage)}</section>
+          <section class="section"><h3>しなびた時の復活方法</h3>${listHtml(item.revive)}</section>
+          <section class="section"><h3>乾燥しすぎた時の使い方</h3>${listHtml(item.dryUse)}</section>
+          <section class="section"><h3>大量消費レシピ例</h3>${listHtml(item.bulk)}</section>
+          <section class="section full"><h3>メモ</h3><p>${escapeHtml(item.note || '未入力')}</p></section>
+        </div>
+      `;
+    }
+
+    function bindFormTags() {
+      document.querySelectorAll('.form-tag').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const tag = btn.dataset.tag;
+          if (formTags.includes(tag)) formTags = formTags.filter(v => v !== tag);
+          else formTags = [...formTags, tag];
+          syncFormTagButtons();
+        });
+      });
+    }
+
+    function syncFormTagButtons() {
+      document.querySelectorAll('.form-tag').forEach(btn => {
+        btn.classList.toggle('active', formTags.includes(btn.dataset.tag));
+      });
+    }
+
+    function clearForm() {
+      ['f-name','f-kana','f-feature','f-period','f-storage','f-revive','f-dry','f-bulk','f-note'].forEach(id => {
+        document.getElementById(id).value = '';
+      });
+      formTags = [];
+      syncFormTagButtons();
+    }
+
+    function addItem() {
+      const name = document.getElementById('f-name').value.trim();
+      const kana = document.getElementById('f-kana').value.trim();
+      const feature = document.getElementById('f-feature').value.trim();
+      const period = document.getElementById('f-period').value.trim();
+      const storage = normalizeLines(document.getElementById('f-storage').value);
+      const revive = normalizeLines(document.getElementById('f-revive').value);
+      const dryUse = normalizeLines(document.getElementById('f-dry').value);
+      const bulk = normalizeLines(document.getElementById('f-bulk').value);
+      const note = document.getElementById('f-note').value.trim();
+      if (!name) {
+        alert('食材名は必須です。');
+        return;
+      }
+      const custom = readCustomData();
+      const item = {
+        id: 'custom-' + Date.now(),
+        name, kana,
+        storageTags: formTags.length ? formTags : ['冷蔵'],
+        feature, period, storage, revive, dryUse, bulk, note
+      };
+      custom.push(item);
+      writeCustomData(custom);
+      selectedId = item.id;
+      clearForm();
+      renderStats();
+      renderList();
+      renderDetail(item);
+      alert('食材を追加しました。');
+    }
+
+    function resetCustomData() {
+      const ok = confirm('このブラウザで追加した食材だけを削除します。よければOKを押してください。');
+      if (!ok) return;
+      localStorage.removeItem(STORAGE_KEY);
+      selectedId = BASE_DATA[0]?.id || null;
+      renderStats();
+      renderList();
+      renderDetail(BASE_DATA[0] || null);
+    }
+
+    function exportCustomData() {
+      const custom = readCustomData();
+      const payload = {
+        app: 'vegetable-memo-app',
+        version: 3,
+        exportedAt: new Date().toISOString(),
+        itemCount: custom.length,
+        items: custom
+      };
+      const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      const today = new Date();
+      const stamp = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`;
+      a.href = url;
+      a.download = `vegetable-memo-backup-${stamp}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    function importCustomData(file) {
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = () => {
+        try {
+          const json = JSON.parse(reader.result);
+          if (!json || !Array.isArray(json.items)) {
+            alert('このJSONは読み込めませんでした。items 配列が必要です。');
+            return;
+          }
+          const ok = confirm(`JSON内の ${json.items.length} 件をこのブラウザの追加データとして読み込みます。既存の追加データに上書きではなく追加します。続けますか？`);
+          if (!ok) return;
+          const current = readCustomData();
+          const normalized = json.items.map((item, idx) => ({
+            id: item.id || `imported-${Date.now()}-${idx}`,
+            name: item.name || '名称未設定',
+            kana: item.kana || '',
+            storageTags: Array.isArray(item.storageTags) && item.storageTags.length ? item.storageTags : ['冷蔵'],
+            feature: item.feature || '',
+            period: item.period || '',
+            storage: Array.isArray(item.storage) ? item.storage : [],
+            revive: Array.isArray(item.revive) ? item.revive : [],
+            dryUse: Array.isArray(item.dryUse) ? item.dryUse : [],
+            bulk: Array.isArray(item.bulk) ? item.bulk : [],
+            note: item.note || ''
+          }));
+          writeCustomData([...current, ...normalized]);
+          selectedId = normalized[0]?.id || selectedId;
+          renderStats();
+          renderList();
+          const all = getAllData();
+          renderDetail(all.find(v => v.id === selectedId) || all[0] || null);
+          alert('JSONを読み込みました。');
+        } catch (e) {
+          alert('JSONの読み込みに失敗しました。ファイル形式を確認してください。');
+        }
+      };
+      reader.readAsText(file, 'utf-8');
+    }
+
+    document.getElementById('addBtn').addEventListener('click', addItem);
+    document.getElementById('resetBtn').addEventListener('click', resetCustomData);
+    document.getElementById('exportBtn').addEventListener('click', exportCustomData);
+    document.getElementById('importBtn').addEventListener('click', () => importFileEl.click());
+    importFileEl.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      importCustomData(file);
+      e.target.value = '';
+    });
+    searchEl.addEventListener('input', renderList);
+
+    bindFormTags();
+    renderFilterChips();
+    renderStats();
+    selectedId = BASE_DATA[0].id;
+    renderList();
+    renderDetail(BASE_DATA[0]);
+  </script>
+</body>
+</html>
